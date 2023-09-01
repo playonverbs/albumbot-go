@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/FedorLap2006/disgolf"
@@ -99,4 +100,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	<-stop
+	log.Println("Gracefully shutting down")
 }
