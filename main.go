@@ -17,6 +17,8 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
+var RemoveCommands = flag.Bool("rmcmd", true, "remove commands on bot shutdown.")
+
 func main() {
 	ctx := context.Background()
 	err := dotenv.Load()
@@ -106,6 +108,17 @@ func main() {
 	signal.Notify(stop, os.Interrupt, os.Kill)
 	log.Println("Press Ctrl-C to exit")
 	<-stop
+
+	if *RemoveCommands {
+		log.Println("Removing commands...")
+
+		for _, v := range registeredCommands {
+			err := s.ApplicationCommandDelete(s.State.User.ID, *guildID, v.ID)
+			if err != nil {
+				log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
+			}
+		}
+	}
 
 	log.Println("Gracefully shutting down")
 }
