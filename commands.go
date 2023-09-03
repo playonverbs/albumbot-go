@@ -2,111 +2,112 @@ package main
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/FedorLap2006/disgolf"
 	"github.com/bwmarrin/discordgo"
 )
 
-func getValues(ctx *disgolf.Ctx) map[string]interface{} {
+func getValues(i *discordgo.Interaction) map[string]interface{} {
 	var vals map[string]interface{}
-	for _, opt := range ctx.Interaction.ApplicationCommandData().Options {
+	for _, opt := range i.ApplicationCommandData().Options {
 		vals[opt.Name] = opt.Value
 	}
 
 	return vals
 }
 
-func getMemberName(ctx *disgolf.Ctx) string {
-	if ctx.Interaction.Member != nil {
-		if nick := ctx.Interaction.Member.Nick; nick != "" {
+func getMemberName(i *discordgo.Interaction) string {
+	if i.Member != nil {
+		if nick := i.Member.Nick; nick != "" {
 			return nick
 		} else {
-			return ctx.Interaction.Member.User.Username
+			return i.Member.User.Username
 		}
 	}
 
-	return ctx.Interaction.User.Username
+	return i.User.Username
 }
 
-var commandAlbumOfTheWeek = &disgolf.Command{
-	Name:        "album-of-the-week",
-	Description: "Fetch the current album of the week",
-	Handler: disgolf.HandlerFunc(func(ctx *disgolf.Ctx) {
-		fmt.Println(ctx.Interaction.Member.Nick)
-
-		ctx.Respond(&discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Hello World!",
+var Commands = []*discordgo.ApplicationCommand{
+	{
+		Name:        "album-of-the-week",
+		Description: "Fetch the current album of the week",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "date",
+				Description: "date to grab album of the week for, else get the current one",
+				Required:    false,
 			},
-		})
-	}),
-	Options: []*discordgo.ApplicationCommandOption{
-		{
-			Type:        discordgo.ApplicationCommandOptionString,
-			Name:        "date",
-			Description: "date to grab album of the week for, else get the current one",
-			Required:    false,
+		},
+	},
+	{
+		Name:        "add-album",
+		Description: "Add a new album to the list",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "name",
+				Description: "name of the album to add",
+				Required:    true,
+			},
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "spotify_link",
+				Description: "spotify link to the album",
+				Required:    true,
+			},
+		},
+	},
+	{
+		Name:        "vote",
+		Description: "Vote for an album",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:         discordgo.ApplicationCommandOptionString,
+				Name:         "album-name",
+				Description:  "Name of the album to vote for",
+				Autocomplete: true,
+				Choices: []*discordgo.ApplicationCommandOptionChoice{
+					{
+						Name:  "The-Kickback",
+						Value: "The Kickback",
+					},
+				},
+			},
 		},
 	},
 }
 
-var commandAddAlbum = &disgolf.Command{
-	Name:        "add-album",
-	Description: "Add a new album to the list",
-	Handler: disgolf.HandlerFunc(func(ctx *disgolf.Ctx) {
-		vals := getValues(ctx)
-		suggestedBy := getMemberName(ctx)
+var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+	"album-of-the-week": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		values := getValues(i.Interaction)
 
-		fmt.Println(
-			vals["name"],
-			vals["spotify_link"],
-			suggestedBy,
-			time.Now().Format(dateLayout),
-		)
+		fmt.Println(values)
 
-		ctx.Respond(&discordgo.InteractionResponse{
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "Hello World from AddAlbum",
+				Content: "Hey there from album-of-the-week",
 			},
 		})
-	}),
-	Options: []*discordgo.ApplicationCommandOption{
-		{
-			Type:        discordgo.ApplicationCommandOptionString,
-			Name:        "name",
-			Description: "name of the album to add",
-			Required:    true,
-		},
-		{
-			Type:        discordgo.ApplicationCommandOptionString,
-			Name:        "spotify_link",
-			Description: "spotify link to the album",
-			Required:    true,
-		},
 	},
-}
+	"add-album": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		values := getValues(i.Interaction)
+		fmt.Println(values)
 
-var commandVote = &disgolf.Command{
-	Name:        "vote",
-	Description: "Vote for an album",
-	Handler: disgolf.HandlerFunc(func(ctx *disgolf.Ctx) {
-		vals := getValues(ctx)
-		suggestedBy := getMemberName(ctx)
-
-		fmt.Println(
-			vals["name"],
-			suggestedBy,
-		)
-	}),
-	Options: []*discordgo.ApplicationCommandOption{
-		{
-			Type:         discordgo.ApplicationCommandOptionString,
-			Name:         "",
-			Autocomplete: true,
-			Choices:      []*discordgo.ApplicationCommandOptionChoice{},
-		},
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: fmt.Sprintf("Hey there from add-album"),
+			},
+		})
+	},
+	"vote": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Hey there from vote",
+			},
+		})
 	},
 }

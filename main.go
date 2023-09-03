@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/FedorLap2006/disgolf"
 	"github.com/bwmarrin/discordgo"
 	dotenv "github.com/joho/godotenv"
 	"golang.org/x/oauth2/google"
@@ -29,6 +28,34 @@ func main() {
 
 	flag.Parse()
 
+	s, err := discordgo.New("Bot " + *discordToken)
+
+	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if h, ok := CommandHandler[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+		}
+	})
+
+	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
+	})
+
+	err = s.Open()
+	if err != nil {
+		log.Fatalf("Cannot open the session %v", err)
+	}
+
+	log.Println("Adding commands...")
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(Commands))
+	for i, v := range Commands {
+		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, *guildID, v)
+		if err != nil {
+			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
+		}
+		registeredCommands[i] = cmd
+	}
+	defer s.Close()
+
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
@@ -41,32 +68,6 @@ func main() {
 	}
 	client := GetClient(config)
 
-	fmt.Println(*guildID)
-
-	bot, err := disgolf.New(*discordToken)
-	if err != nil {
-		log.Fatalf("cannot create bot: %#v", err)
-	}
-
-	bot.Router.Register(commandAlbumOfTheWeek)
-	bot.Router.Register(commandAddAlbum)
-
-	bot.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		log.Println("Bot is up!")
-	})
-	bot.AddHandler(bot.Router.HandleInteraction)
-
-	err = bot.Router.Sync(bot.Session, "1146210924395499682", *guildID)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = bot.Open()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer bot.Close()
-
 	srv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Sheets client: %v", err)
@@ -78,7 +79,7 @@ func main() {
 		log.Fatalf("Unable to retrieve data from sheet: %v", err)
 	}
 
-	fmt.Printf("%#v", entries)
+	fmt.Printf("%#v\n", entries)
 
 	u, err := url.Parse("https://open.spotify.com/album/3HCCUaRSjHSFOe4fqE0BiP?si=roo_D8KGQeiuqqg_2YgCTQ")
 	if err != nil {
@@ -102,7 +103,9 @@ func main() {
 	}
 
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
+	signal.Notify(stop, os.Interrupt, os.Kill)
+	log.Println("Press Ctrl-C to exit")
 	<-stop
+
 	log.Println("Gracefully shutting down")
 }
