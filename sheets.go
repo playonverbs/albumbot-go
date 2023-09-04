@@ -79,7 +79,6 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 // Get a list of entries from the google sheet and given range
-// func GetSheetEntries(srv *sheets.Service, sheetID string, readRange string) ([]*Entry, error) {
 func (srv Service) GetSheetEntries(sheetID string, readRange string) ([]*Entry, error) {
 	var entries []*Entry
 
