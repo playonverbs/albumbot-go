@@ -30,6 +30,10 @@ func getMemberName(i *discordgo.Interaction) string {
 
 var Commands = []*discordgo.ApplicationCommand{
 	{
+		Name:        "hi",
+		Description: "be polite",
+	},
+	{
 		Name:        "album-of-the-week",
 		Description: "Fetch the current album of the week",
 		Options: []*discordgo.ApplicationCommandOption{
@@ -86,6 +90,12 @@ var Commands = []*discordgo.ApplicationCommand{
 }
 
 var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+	"hi": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{Content: "hi!"},
+		})
+	},
 	"album-of-the-week": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		values := getValues(i.Interaction, 1)
 
