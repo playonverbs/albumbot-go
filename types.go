@@ -48,7 +48,7 @@ func NewListenStatus(status string) ListenStatus {
 	}
 }
 
-type Score uint64
+type Score uint8
 
 func (s Score) String() string {
 	return fmt.Sprintf("%d/30", s)
@@ -61,7 +61,7 @@ func parseScore(str string) (Score, error) {
 		return 0, nil
 	}
 
-	val, err := strconv.ParseUint(score, 10, 32)
+	val, err := strconv.ParseUint(score, 10, 8)
 	if err != nil {
 		return 0, err
 	}
