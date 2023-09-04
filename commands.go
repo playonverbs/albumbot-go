@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -74,6 +75,12 @@ var Commands = []*discordgo.ApplicationCommand{
 					},
 				},
 			},
+			{
+				Type:        discordgo.ApplicationCommandOptionInteger,
+				Name:        "score",
+				Description: "Score to give the album",
+				MaxValue:    30.0,
+			},
 		},
 	},
 }
@@ -84,10 +91,18 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 
 		fmt.Println(values)
 
+		ents, err := Srv.GetSheetEntries(*SpreadsheetID, *ReadRange)
+		if err != nil {
+			log.Println("cannot retrieve sheet entries:", err)
+		}
+
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "Hey there from album-of-the-week",
+				Content: fmt.Sprintf(
+					"Album of the Week:\n%s\nVotes: %d\nSubmitted By: %s",
+					ents[0].Album, ents[0].Votes, ents[0].SuggestedBy,
+				),
 			},
 		})
 	},
@@ -95,10 +110,14 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 		values := getValues(i.Interaction, 2)
 		fmt.Println(values)
 
+		e := NewEntry(values["name"].(string), getMemberName(i.Interaction), values["spotify_link"].(string))
+		Srv.AppendSheetEntry(*SpreadsheetID, *ReadRange, e)
+
+		// TODO: add embed/link to show content of what's been added
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: fmt.Sprintf("Hey there from add-album"),
+				Content: fmt.Sprintf("Album Added"),
 			},
 		})
 	},

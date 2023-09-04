@@ -94,6 +94,24 @@ func (e Entry) ToValue() []interface{} {
 	}
 }
 
+func NewEntry(album, suggestedBy, spotifyURL string) *Entry {
+	u, err := url.Parse(spotifyURL)
+	if err != nil {
+		log.Printf("could not parse %s: %s", spotifyURL, err)
+	}
+	u.RawQuery = ""
+
+	return &Entry{
+		Album:       album,
+		DateAdded:   time.Now(),
+		SuggestedBy: suggestedBy,
+		SpotifyURL:  *u,
+		Votes:       0,
+		MeanScore:   0,
+		Status:      NotListened,
+	}
+}
+
 func NewEntryFromRow(index int, row []interface{}) *Entry {
 	date, err := time.Parse(dateLayout, row[1].(string))
 	if err != nil {
