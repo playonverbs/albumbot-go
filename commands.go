@@ -6,8 +6,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func getValues(i *discordgo.Interaction) map[string]interface{} {
-	var vals map[string]interface{}
+func getValues(i *discordgo.Interaction, numFields int) map[string]interface{} {
+	var vals = make(map[string]interface{}, numFields)
 	for _, opt := range i.ApplicationCommandData().Options {
 		vals[opt.Name] = opt.Value
 	}
@@ -80,7 +80,7 @@ var Commands = []*discordgo.ApplicationCommand{
 
 var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 	"album-of-the-week": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		values := getValues(i.Interaction)
+		values := getValues(i.Interaction, 1)
 
 		fmt.Println(values)
 
@@ -92,7 +92,7 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 		})
 	},
 	"add-album": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		values := getValues(i.Interaction)
+		values := getValues(i.Interaction, 2)
 		fmt.Println(values)
 
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
