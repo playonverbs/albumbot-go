@@ -100,7 +100,7 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: fmt.Sprintf(
-					"Album of the Week:\n%s\nVotes: %d\nSubmitted By: %s",
+					"Album of the Week: %s\nVotes: %d\nSubmitted By: %s",
 					ents[0].Album, ents[0].Votes, ents[0].SuggestedBy,
 				),
 			},
@@ -117,7 +117,7 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: fmt.Sprintf("Album Added"),
+				Content: fmt.Sprintf("Album Added: %s", e.Album),
 			},
 		})
 	},
