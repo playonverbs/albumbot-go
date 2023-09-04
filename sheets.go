@@ -9,8 +9,19 @@ import (
 	"os"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
+
+type Service struct{ *sheets.Service }
+
+func NewService(ctx context.Context, opt option.ClientOption) (*Service, error) {
+	srv, err := sheets.NewService(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+	return &Service{srv}, nil
+}
 
 // Retrieve a token, saves the token, then returns the generated client.
 func GetClient(config *oauth2.Config) *http.Client {
@@ -68,7 +79,8 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 // Get a list of entries from the google sheet and given range
-func GetSheetEntries(srv *sheets.Service, sheetID string, readRange string) ([]*Entry, error) {
+// func GetSheetEntries(srv *sheets.Service, sheetID string, readRange string) ([]*Entry, error) {
+func (srv Service) GetSheetEntries(sheetID string, readRange string) ([]*Entry, error) {
 	var entries []*Entry
 
 	res, err := srv.Spreadsheets.Values.Get(sheetID, readRange).Do()
@@ -90,7 +102,7 @@ func GetSheetEntries(srv *sheets.Service, sheetID string, readRange string) ([]*
 }
 
 // Append a single entry to the google sheet
-func AppendSheetEntry(srv *sheets.Service, sheetID string, writeRange string, entry *Entry) error {
+func (srv Service) AppendSheetEntry(sheetID string, writeRange string, entry *Entry) error {
 	body := &sheets.ValueRange{
 		MajorDimension: "ROWS",
 		Range:          writeRange,

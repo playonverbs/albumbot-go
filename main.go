@@ -14,23 +14,57 @@ import (
 	dotenv "github.com/joho/godotenv"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
-	"google.golang.org/api/sheets/v4"
 )
 
-var RemoveCommands = flag.Bool("rmcmd", true, "remove commands on bot shutdown.")
+var (
+	RemoveCommands *bool
+	SpreadsheetID  *string
+	GuildID        *string
+	DiscordToken   *string
+	ReadRange      *string
+	Srv            *Service
+	ctx            context.Context
+)
 
-func main() {
-	ctx := context.Background()
+func init() {
 	err := dotenv.Load()
+	if err != nil {
+		log.Fatalln("Cannot load .env file: ", err)
+	}
 
-	discordToken := flag.String("token", os.Getenv("DGU_TOKEN"), "bot access token")
-	guildID := flag.String("guild", os.Getenv("GUILD_ID"), "guild id to use")
-	// SpreadsheetID := flag.String("sheet", "1QYP9sN_VeDDzbiNI03IRPzAR1KafFv5YjUTVWq6fh_k", "spreadsheet id to use") // nicks
-	SpreadsheetID := flag.String("sheet", "19gDaN_746oECgSAhWlDSRMwhNvuZ70iyjM5l6Q_uL9U", "spreadsheet id to use") // mine
+	RemoveCommands = flag.Bool("rmcmd", true, "remove commands on bot shutdown.")
+	SpreadsheetID = flag.String("sheet", "19gDaN_746oECgSAhWlDSRMwhNvuZ70iyjM5l6Q_uL9U", "spreadsheet id to use") // mine
+	GuildID = flag.String("guild", os.Getenv("GUILD_ID"), "guild id to use")
+	DiscordToken = flag.String("token", os.Getenv("DGU_TOKEN"), "bot access token")
+	ReadRange = flag.String("readrange", "Music Club!A2:G", "spreadsheet cell range for IO")
 
 	flag.Parse()
+	ctx = context.Background()
+}
 
-	s, err := discordgo.New("Bot " + *discordToken)
+func init() {
+	b, err := os.ReadFile("credentials.json")
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	// If modifying these scopes, delete your previously saved token.json.
+	config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets")
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+	client := GetClient(config)
+
+	// create google sheets service first to avoid
+	Srv, err = NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		log.Fatalf("Unable to retrieve Sheets client: %v", err)
+	}
+}
+
+func main() {
+	s, err := discordgo.New("Bot " + *DiscordToken)
+	s.SyncEvents = true
 
 	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if h, ok := CommandHandler[i.ApplicationCommandData().Name]; ok {
@@ -46,37 +80,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Cannot open the session %v", err)
 	}
+	log.Println("Opened bot connection...")
 
-	log.Println("Adding commands...")
-	registeredCommands := make([]*discordgo.ApplicationCommand, len(Commands))
-	for i, v := range Commands {
-		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, *guildID, v)
-		if err != nil {
-			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
-		}
-		registeredCommands[i] = cmd
-	}
-	defer s.Close()
-
-	b, err := os.ReadFile("credentials.json")
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
-
-	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets")
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
-	}
-	client := GetClient(config)
-
-	srv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Sheets client: %v", err)
-	}
-
-	readRange := "Music Club!A2:G"
-	entries, err := GetSheetEntries(srv, *SpreadsheetID, readRange)
+	// readRange := "Music Club!A2:G"
+	entries, err := Srv.GetSheetEntries(*SpreadsheetID, *ReadRange)
 	if err != nil {
 		log.Fatalf("Unable to retrieve data from sheet: %v", err)
 	}
@@ -99,10 +106,21 @@ func main() {
 		Status:      NotListened,
 	}
 
-	err = AppendSheetEntry(srv, *SpreadsheetID, readRange, e)
+	err = Srv.AppendSheetEntry(*SpreadsheetID, *ReadRange, e)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Println("Adding commands...")
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(Commands))
+	for i, v := range Commands {
+		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, *GuildID, v)
+		if err != nil {
+			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
+		}
+		registeredCommands[i] = cmd
+	}
+	defer s.Close()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, os.Kill)
@@ -113,7 +131,7 @@ func main() {
 		log.Println("Removing commands...")
 
 		for _, v := range registeredCommands {
-			err := s.ApplicationCommandDelete(s.State.User.ID, *guildID, v.ID)
+			err := s.ApplicationCommandDelete(s.State.User.ID, *GuildID, v.ID)
 			if err != nil {
 				log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
 			}
