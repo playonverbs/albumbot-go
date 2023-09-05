@@ -146,6 +146,33 @@ func NewEntryFromRow(index int, row []interface{}) *Entry {
 	}
 }
 
+type Entries []*Entry
+
+func (s Entries) Len() int      { return len(s) }
+func (s Entries) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (s Entries) EntriesInWeek(date time.Time) Entries {
+	var filtered = make(Entries, 10)
+
+	year, week := date.ISOWeek()
+	for _, v := range s {
+		thisYear, thisWeek := v.DateAdded.ISOWeek()
+		if thisYear == year && thisWeek == week {
+			filtered = append(filtered, v)
+		}
+	}
+
+	return filtered
+}
+
+type ByVotes struct{ Entries }
+
+func (s ByVotes) Less(i, j int) bool { return s.Entries[i].Votes < s.Entries[j].Votes }
+
+type ByDate struct{ Entries }
+
+func (s ByDate) Less(i, j int) bool { return s.Entries[i].DateAdded.After(s.Entries[j].DateAdded) }
+
 func CompareDates(d1, d2 time.Time) bool {
 	ny, nm, nd := d1.Date()
 	ey, em, ed := d2.Date()

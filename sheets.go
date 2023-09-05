@@ -79,8 +79,8 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 // Get a list of entries from the google sheet and given range
-func (srv Service) GetSheetEntries(sheetID string, readRange string) ([]*Entry, error) {
-	var entries []*Entry
+func (srv Service) GetSheetEntries(sheetID string, readRange string) (Entries, error) {
+	var entries Entries
 
 	res, err := srv.Spreadsheets.Values.Get(sheetID, readRange).Do()
 	if err != nil {
