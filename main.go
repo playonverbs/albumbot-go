@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	dotenv "github.com/joho/godotenv"
@@ -82,7 +81,6 @@ func main() {
 	}
 	log.Println("Opened bot connection...")
 
-	// readRange := "Music Club!A2:G"
 	entries, err := Srv.GetSheetEntries(*SpreadsheetID, *ReadRange)
 	if err != nil {
 		log.Fatalf("Unable to retrieve data from sheet: %v", err)
@@ -95,21 +93,6 @@ func main() {
 		log.Fatalf("couldn't parse the URL: %#v", err)
 	}
 	u.RawQuery = "" // remove share ID
-
-	e := &Entry{
-		Album:       "The Kickback",
-		DateAdded:   time.Now(),
-		SuggestedBy: "Niam",
-		SpotifyURL:  *u,
-		Votes:       3,
-		MeanScore:   30,
-		Status:      NotListened,
-	}
-
-	err = Srv.AppendSheetEntry(*SpreadsheetID, *ReadRange, e)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	log.Println("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(Commands))
