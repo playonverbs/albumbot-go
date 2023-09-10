@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"sort"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 func getValues(i *discordgo.Interaction, numFields int) map[string]interface{} {
-	var vals = make(map[string]interface{}, numFields)
+	var vals = make(map[string]interface{})
 	for _, opt := range i.ApplicationCommandData().Options {
 		vals[opt.Name] = opt.Value
 	}
@@ -106,12 +108,18 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 			log.Println("cannot retrieve sheet entries:", err)
 		}
 
+		weeksEnts := ents.EntriesInWeek(time.Now())
+		sort.Sort(sort.Reverse(ByVotes{weeksEnts}))
+
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: fmt.Sprintf(
-					"Album of the Week: %s\nVotes: %d\nSubmitted By: %s",
-					ents[0].Album, ents[0].Votes, ents[0].SuggestedBy,
+					"Album of the Week: %s\nVotes: %d\nSubmitted By: %s\nLink: %s",
+					weeksEnts[0].Album,
+					weeksEnts[0].Votes,
+					weeksEnts[0].SuggestedBy,
+					weeksEnts[0].SpotifyURL.String(),
 				),
 			},
 		})

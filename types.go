@@ -68,9 +68,10 @@ func parseScore(str string) (Score, error) {
 	return Score(val), nil
 }
 
+// Entry contains fields to represent an Album row in the google spreadsheet
 // TODO: consider just using string for SpotifyURL
 type Entry struct {
-	ID          int
+	ID          int // An ID only filled when reading from the sheet
 	Album       string
 	DateAdded   time.Time
 	SuggestedBy string
@@ -152,7 +153,7 @@ func (s Entries) Len() int      { return len(s) }
 func (s Entries) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (s Entries) EntriesInWeek(date time.Time) Entries {
-	var filtered = make(Entries, 10)
+	var filtered Entries
 
 	year, week := date.ISOWeek()
 	for _, v := range s {
