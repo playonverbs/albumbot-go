@@ -79,8 +79,8 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 // Get a list of entries from the google sheet and given range
-func (srv Service) GetSheetEntries(sheetID string, readRange string) (Entries, error) {
-	var entries Entries
+func (srv Service) GetSheetEntries(sheetID string, readRange string) (Albums, error) {
+	var entries Albums
 
 	res, err := srv.Spreadsheets.Values.Get(sheetID, readRange).Do()
 	if err != nil {
@@ -90,10 +90,10 @@ func (srv Service) GetSheetEntries(sheetID string, readRange string) (Entries, e
 
 	if len(res.Values) == 0 {
 		log.Printf("No data found")
-		return []*Entry{}, nil
+		return []*Album{}, nil
 	} else {
 		for idx, row := range res.Values {
-			entries = append(entries, NewEntryFromRow(idx, row))
+			entries = append(entries, NewAlbumFromRow(idx, row))
 		}
 	}
 
@@ -101,7 +101,7 @@ func (srv Service) GetSheetEntries(sheetID string, readRange string) (Entries, e
 }
 
 // Append a single entry to the google sheet
-func (srv Service) AppendSheetEntry(sheetID string, writeRange string, entry *Entry) error {
+func (srv Service) AppendSheetEntry(sheetID string, writeRange string, entry Entry) error {
 	body := &sheets.ValueRange{
 		MajorDimension: "ROWS",
 		Range:          writeRange,

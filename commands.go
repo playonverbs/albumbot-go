@@ -9,7 +9,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func getValues(i *discordgo.Interaction, numFields int) map[string]interface{} {
+func getValues(i *discordgo.Interaction) map[string]interface{} {
 	var vals = make(map[string]interface{})
 	for _, opt := range i.ApplicationCommandData().Options {
 		vals[opt.Name] = opt.Value
@@ -99,7 +99,7 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 		})
 	},
 	"album-of-the-week": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		values := getValues(i.Interaction, 1)
+		values := getValues(i.Interaction)
 
 		fmt.Println(values)
 
@@ -108,7 +108,7 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 			log.Println("cannot retrieve sheet entries:", err)
 		}
 
-		weeksEnts := ents.EntriesInWeek(time.Now())
+		weeksEnts := ents.AlbumsInWeek(time.Now())
 		sort.Sort(sort.Reverse(ByVotes{weeksEnts}))
 
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -125,10 +125,10 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 		})
 	},
 	"add-album": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		values := getValues(i.Interaction, 2)
+		values := getValues(i.Interaction)
 		fmt.Println(values)
 
-		e := NewEntry(values["name"].(string), getMemberName(i.Interaction), values["spotify_link"].(string))
+		e := NewAlbum(values["name"].(string), getMemberName(i.Interaction), values["spotify_link"].(string))
 		Srv.AppendSheetEntry(*SpreadsheetID, *ReadRange, e)
 
 		// TODO: add embed/link to show content of what's been added

@@ -48,6 +48,7 @@ func NewListenStatus(status string) ListenStatus {
 	}
 }
 
+// Represents an Album score, rated out of 30
 type Score uint8
 
 func (s Score) String() string {
@@ -68,9 +69,13 @@ func parseScore(str string) (Score, error) {
 	return Score(val), nil
 }
 
+type Entry interface {
+	ToValue() []interface{}
+}
+
 // Entry contains fields to represent an Album row in the google spreadsheet
 // TODO: consider just using string for SpotifyURL
-type Entry struct {
+type Album struct {
 	ID          int // An ID only filled when reading from the sheet
 	Album       string
 	DateAdded   time.Time
@@ -81,28 +86,28 @@ type Entry struct {
 	Status      ListenStatus
 }
 
-func (e Entry) ToValue() []interface{} {
-	dateFormat := e.DateAdded.Format(dateLayout)
+func (a Album) ToValue() []interface{} {
+	dateFormat := a.DateAdded.Format(dateLayout)
 
 	return []interface{}{
-		e.Album,
+		a.Album,
 		dateFormat,
-		e.SuggestedBy,
-		e.SpotifyURL.String(),
-		e.Votes,
-		e.MeanScore.String(),
-		e.Status.String(),
+		a.SuggestedBy,
+		a.SpotifyURL.String(),
+		a.Votes,
+		a.MeanScore.String(),
+		a.Status.String(),
 	}
 }
 
-func NewEntry(album, suggestedBy, spotifyURL string) *Entry {
+func NewAlbum(album, suggestedBy, spotifyURL string) *Album {
 	u, err := url.Parse(spotifyURL)
 	if err != nil {
 		log.Printf("could not parse %s: %s", spotifyURL, err)
 	}
 	u.RawQuery = ""
 
-	return &Entry{
+	return &Album{
 		Album:       album,
 		DateAdded:   time.Now(),
 		SuggestedBy: suggestedBy,
@@ -113,7 +118,7 @@ func NewEntry(album, suggestedBy, spotifyURL string) *Entry {
 	}
 }
 
-func NewEntryFromRow(index int, row []interface{}) *Entry {
+func NewAlbumFromRow(index int, row []interface{}) *Album {
 	date, err := time.Parse(dateLayout, row[1].(string))
 	if err != nil {
 		log.Fatalf("cannot parse date: %#v", err)
@@ -135,7 +140,7 @@ func NewEntryFromRow(index int, row []interface{}) *Entry {
 		score = 0
 	}
 
-	return &Entry{
+	return &Album{
 		ID:          index,
 		Album:       row[0].(string),
 		DateAdded:   date,
@@ -147,13 +152,13 @@ func NewEntryFromRow(index int, row []interface{}) *Entry {
 	}
 }
 
-type Entries []*Entry
+type Albums []*Album
 
-func (s Entries) Len() int      { return len(s) }
-func (s Entries) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s Albums) Len() int      { return len(s) }
+func (s Albums) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func (s Entries) EntriesInWeek(date time.Time) Entries {
-	var filtered Entries
+func (s Albums) AlbumsInWeek(date time.Time) Albums {
+	var filtered Albums
 
 	year, week := date.ISOWeek()
 	for _, v := range s {
@@ -166,13 +171,13 @@ func (s Entries) EntriesInWeek(date time.Time) Entries {
 	return filtered
 }
 
-type ByVotes struct{ Entries }
+type ByVotes struct{ Albums }
 
-func (s ByVotes) Less(i, j int) bool { return s.Entries[i].Votes < s.Entries[j].Votes }
+func (s ByVotes) Less(i, j int) bool { return s.Albums[i].Votes < s.Albums[j].Votes }
 
-type ByDate struct{ Entries }
+type ByDate struct{ Albums }
 
-func (s ByDate) Less(i, j int) bool { return s.Entries[i].DateAdded.After(s.Entries[j].DateAdded) }
+func (s ByDate) Less(i, j int) bool { return s.Albums[i].DateAdded.After(s.Albums[j].DateAdded) }
 
 func CompareDates(d1, d2 time.Time) bool {
 	ny, nm, nd := d1.Date()
