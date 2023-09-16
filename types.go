@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/url"
 	"strconv"
 	"time"
@@ -169,6 +170,21 @@ func (s Albums) AlbumsInWeek(date time.Time) Albums {
 	}
 
 	return filtered
+}
+
+// Rand returns a random unlistened Album from the Album list
+func (s Albums) Rand() *Album {
+	if s.Len() == 0 {
+		return nil
+	}
+
+	for {
+		n := rand.Intn(s.Len())
+		if s[n].Status == NotListened {
+			return s[n]
+		}
+		// TODO: catch infinite loop when if is false
+	}
 }
 
 type ByVotes struct{ Albums }

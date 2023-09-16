@@ -89,6 +89,19 @@ var Commands = []*discordgo.ApplicationCommand{
 			},
 		},
 	},
+	{
+		Name:        "roll",
+		Description: "Randomly pick from either albums not-listened to (default), previously listened to, or all albums.",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:         discordgo.ApplicationCommandOptionString,
+				Name:         "filter",
+				Description:  "optional condition to filter roll by",
+				Autocomplete: true,
+				Required:     false,
+			},
+		},
+	},
 }
 
 var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
@@ -146,5 +159,53 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 				Content: "Hey there from vote",
 			},
 		})
+	},
+	"roll": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		// values := getValues(i.Interaction)
+
+		switch i.Type {
+		case discordgo.InteractionApplicationCommand:
+			ents, err := Srv.GetSheetEntries(*SpreadsheetID, *ReadRange)
+			if err != nil {
+				log.Println(err)
+			}
+
+			r := ents.Rand()
+
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: fmt.Sprintf(
+						"Picked: %s: %s",
+						r.Album,
+						r.SpotifyURL.String(),
+					),
+				},
+			})
+		case discordgo.InteractionApplicationCommandAutocomplete:
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionApplicationCommandAutocompleteResult,
+				Data: &discordgo.InteractionResponseData{
+					Choices: commandChoices["roll"],
+				},
+			})
+		}
+	},
+
+// autocomplete choices for each command
+var commandChoices = map[string][]*discordgo.ApplicationCommandOptionChoice{
+	"roll": {
+		{
+			Name:  "Not Listened",
+			Value: "Not Listened",
+		},
+		{
+			Name:  "Listened",
+			Value: "Listened",
+		},
+		{
+			Name:  "All",
+			Value: "all",
+		},
 	},
 }
