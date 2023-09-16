@@ -174,6 +174,8 @@ func (s Albums) AlbumsInWeek(date time.Time) Albums {
 
 // Rand returns a random unlistened Album from the Album list
 func (s Albums) Rand() *Album {
+	var idc int
+
 	if s.Len() == 0 {
 		return nil
 	}
@@ -183,8 +185,14 @@ func (s Albums) Rand() *Album {
 		if s[n].Status == NotListened {
 			return s[n]
 		}
-		// TODO: catch infinite loop when if is false
+
+		idc++
+		if idc++; s.Len() == idc {
+			break
+		}
 	}
+
+	return nil
 }
 
 type ByVotes struct{ Albums }
