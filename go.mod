@@ -3,6 +3,7 @@ module github.com/playonverbs/albumbot-go
 go 1.21
 
 require (
+	github.com/bwmarrin/discordgo v0.27.1
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/oauth2 v0.11.0
 	google.golang.org/api v0.138.0
@@ -12,7 +13,6 @@ require (
 	cloud.google.com/go/compute v1.23.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/FedorLap2006/disgolf v0.0.0-20221004200601-99cfc3d9a0e1 // indirect
-	github.com/bwmarrin/discordgo v0.27.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/s2a-go v0.1.5 // indirect
