@@ -191,17 +191,18 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 			})
 		}
 	},
+}
 
 // autocomplete choices for each command
 var commandChoices = map[string][]*discordgo.ApplicationCommandOptionChoice{
 	"roll": {
 		{
 			Name:  "Not Listened",
-			Value: "Not Listened",
+			Value: NotListened.String(),
 		},
 		{
 			Name:  "Listened",
-			Value: "Listened",
+			Value: Listened.String(),
 		},
 		{
 			Name:  "All",
