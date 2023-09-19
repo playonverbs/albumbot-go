@@ -108,7 +108,10 @@ var CommandHandler = map[string]func(s *discordgo.Session, i *discordgo.Interact
 	"hi": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{Content: "hi!"},
+			Data: &discordgo.InteractionResponseData{
+				Content: "hi!",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
 		})
 	},
 	"album-of-the-week": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
